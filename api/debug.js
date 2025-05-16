@@ -21,6 +21,10 @@ const handler = async (req, res) => {
         hasDomain: !!process.env.SHOPIFY_DOMAIN,
         hasToken: !!process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN
       },
+      // List all environment variables that contain "SHOPIFY" (without showing values)
+      shopifyEnvVars: Object.keys(process.env).filter(key => key.includes('SHOPIFY')),
+      // List all environment variables (without showing values)
+      allEnvVarNames: Object.keys(process.env),
       requestInfo: {
         method: req.method,
         headers: {

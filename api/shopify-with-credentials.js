@@ -26,25 +26,11 @@ const handler = async (req, res) => {
   }
 
   try {
-    // Your Shopify store domain and Storefront API token
-    // You can also hardcode these values for testing (but never in production long-term)
-    const shopifyDomain = process.env.SHOPIFY_DOMAIN || 'your-store.myshopify.com'; // Replace with your actual domain
-    const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN || 'your-token-here'; // Replace with your actual token
-
-    // Log for debugging (will appear in Vercel Function Logs)
-    console.log('Environment debug:', {
-      hasShopifyDomain: !!process.env.SHOPIFY_DOMAIN,
-      hasStorefrontToken: !!process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN,
-      envVarNames: Object.keys(process.env).filter(key => key.includes('SHOPIFY'))
-    });
-
-    if (!shopifyDomain || !storefrontAccessToken) {
-      return res.status(500).json({ error: 'Missing Shopify credentials', envDebug: {
-        nodeEnv: process.env.NODE_ENV,
-        vercelEnv: process.env.VERCEL_ENV,
-      }});
-    }
-
+    // IMPORTANT: For testing only - replace these with your actual values
+    // In production, ALWAYS use environment variables
+    const shopifyDomain = "growth-link.myshopify.com";  // REPLACE WITH YOUR ACTUAL DOMAIN
+    const storefrontAccessToken = "YOUR_ACTUAL_TOKEN";  // REPLACE WITH YOUR ACTUAL TOKEN
+    
     // Forward the GraphQL query to Shopify's Storefront API
     const response = await fetch(
       `https://${shopifyDomain}/api/2023-10/graphql.json`,
@@ -65,7 +51,10 @@ const handler = async (req, res) => {
     return res.status(200).json(data);
   } catch (error) {
     console.error('Shopify API Proxy Error:', error);
-    return res.status(500).json({ error: 'Error connecting to Shopify API' });
+    return res.status(500).json({ 
+      error: 'Error connecting to Shopify API', 
+      details: error.message 
+    });
   }
 };
 
