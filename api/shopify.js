@@ -1,31 +1,32 @@
+// Import fetch
 import fetch from 'node-fetch';
 
-export default async function handler(req, res) {
+// Middleware to handle CORS
+const allowCors = fn => async (req, res) => {
   // Set CORS headers
-  const origin = req.headers.origin || 'https://growlink-testing.webflow.io';
-  
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
-  );
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
 
-  // Handle preflight OPTIONS request
+  // Handle OPTIONS method
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  // Only allow POST requests with proper content type
+  // Forward to the actual handler
+  return await fn(req, res);
+};
+
+// The actual API handler
+const handler = async (req, res) => {
+  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
     // Your Shopify store domain and Storefront API token
-    // These should be set as environment variables in your Vercel project
     const shopifyDomain = process.env.SHOPIFY_DOMAIN;
     const storefrontAccessToken = process.env.SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
@@ -55,4 +56,7 @@ export default async function handler(req, res) {
     console.error('Shopify API Proxy Error:', error);
     return res.status(500).json({ error: 'Error connecting to Shopify API' });
   }
-}
+};
+
+// Export the wrapped handler
+export default allowCors(handler);
