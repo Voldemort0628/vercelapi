@@ -1,5 +1,5 @@
-// Import fetch
-import fetch from 'node-fetch';
+// Import fetch - using require for better compatibility with Vercel serverless environment
+const fetch = require('node-fetch');
 
 // Middleware to handle CORS
 const allowCors = fn => async (req, res) => {
@@ -69,5 +69,5 @@ const handler = async (req, res) => {
   }
 };
 
-// Export the wrapped handler
-export default allowCors(handler);
+// Export the wrapped handler using CommonJS syntax for better compatibility
+module.exports = allowCors(handler);

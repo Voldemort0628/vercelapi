@@ -1,4 +1,6 @@
 // Debug endpoint to check environment configuration
+// No import needed for this one
+
 const allowCors = fn => async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -41,4 +43,4 @@ const handler = async (req, res) => {
   }
 };
 
-export default allowCors(handler);
+module.exports = allowCors(handler);
