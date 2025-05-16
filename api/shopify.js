@@ -1,6 +1,15 @@
 // Import fetch - using require for better compatibility with Vercel serverless environment
 const fetch = require('node-fetch');
 
+// For debugging - enable this to see logs in Vercel Function Logs
+const DEBUG = true;
+
+function debug(...args) {
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
 // Middleware to handle CORS
 const allowCors = fn => async (req, res) => {
   // Set CORS headers
@@ -20,6 +29,14 @@ const allowCors = fn => async (req, res) => {
 
 // The actual API handler
 const handler = async (req, res) => {
+  // Log the request details
+  debug('Received request:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body: req.body
+  });
+  
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -54,10 +71,13 @@ const handler = async (req, res) => {
       const collectionHandle = 'links';
       
       // Build a query that specifically targets the links collection
+      // Using proper Shopify Storefront API query format
       const modifiedQuery = `
-        {
+        query GetCollectionProducts {
           collection(handle: "${collectionHandle}") {
+            id
             title
+            handle
             products(first: 50) {
               edges {
                 node {
@@ -95,9 +115,15 @@ const handler = async (req, res) => {
       requestBody = { query: modifiedQuery };
     }
     
-    // Forward the GraphQL query to Shopify's Storefront API
+    // Log what we're sending to Shopify
+    debug('Sending to Shopify:', {
+      url: `https://${shopifyDomain}/api/2024-07/graphql.json`,
+      body: requestBody
+    });
+    
+    // Forward the GraphQL query to Shopify's Storefront API - using latest 2024-07 version
     const response = await fetch(
-      `https://${shopifyDomain}/api/2023-10/graphql.json`,
+      `https://${shopifyDomain}/api/2024-07/graphql.json`,
       {
         method: 'POST',
         headers: {
@@ -108,14 +134,24 @@ const handler = async (req, res) => {
       }
     );
 
+    // Log Shopify's response status
+    debug('Shopify response status:', response.status);
+    
     // Get the response data
     const data = await response.json();
+    
+    // Log the response from Shopify
+    debug('Shopify response data:', data);
 
     // Return the data to the client
     return res.status(200).json(data);
   } catch (error) {
     console.error('Shopify API Proxy Error:', error);
-    return res.status(500).json({ error: 'Error connecting to Shopify API' });
+    return res.status(500).json({ 
+      error: 'Error connecting to Shopify API',
+      message: error.message,
+      stack: error.stack
+    });
   }
 };
 

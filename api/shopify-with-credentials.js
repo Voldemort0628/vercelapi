@@ -20,6 +20,9 @@ const allowCors = fn => async (req, res) => {
 
 // The actual API handler
 const handler = async (req, res) => {
+  // For troubleshooting only - log the request body
+  console.log('Request body:', req.body);
+
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -28,62 +31,47 @@ const handler = async (req, res) => {
   try {
     // IMPORTANT: For testing only - replace these with your actual values
     // In production, ALWAYS use environment variables
-    const shopifyDomain = "growth-link.myshopify.com";  // REPLACE WITH YOUR ACTUAL DOMAIN
-    const storefrontAccessToken = "YOUR_ACTUAL_TOKEN";  // REPLACE WITH YOUR ACTUAL TOKEN
+    const shopifyDomain = "growth-link.myshopify.com";  // Replace with actual domain
+    const storefrontAccessToken = "your-token-here";  // Replace with actual token
     
-    // Modify the incoming query to filter for the links-collection
+    // Log for debugging
+    console.log('Environment:', {
+      domain: shopifyDomain,
+      tokenPresent: !!storefrontAccessToken,
+      body: req.body
+    });
+
+    // If no body is provided, use a default query to test the connection
     let requestBody = req.body;
     
-    // If no specific collection is requested, override to get links-collection
-    if (requestBody && requestBody.query && !requestBody.query.includes('collection(handle:')) {
-      // Collection handle for "links"
-      const collectionHandle = 'links';
-      
-      // Build a query that specifically targets the links collection
-      const modifiedQuery = `
-        {
-          collection(handle: "${collectionHandle}") {
-            title
-            products(first: 50) {
+    if (!requestBody || !requestBody.query) {
+      // Default test query to list collections
+      // Using proper Shopify Storefront API query format with operation name
+      requestBody = {
+        query: `
+          query GetCollections {
+            collections(first: 10) {
               edges {
                 node {
                   id
                   title
-                  description
                   handle
-                  images(first: 1) {
-                    edges {
-                      node {
-                        url
-                        altText
-                      }
-                    }
-                  }
-                  variants(first: 1) {
-                    edges {
-                      node {
-                        id
-                        price {
-                          amount
-                          currencyCode
-                        }
-                      }
-                    }
-                  }
+                  productsCount
+                  description
                 }
               }
             }
           }
-        }
-      `;
-      
-      // Replace the query with our modified version
-      requestBody = { query: modifiedQuery };
+        `
+      };
     }
     
-    // Forward the GraphQL query to Shopify's Storefront API
+    // Make the request to Shopify
+    console.log('Making request to Shopify API...');
+    
+    // Forward the GraphQL query to Shopify's Storefront API - using latest 2024-07 version
     const response = await fetch(
-      `https://${shopifyDomain}/api/2023-10/graphql.json`,
+      `https://${shopifyDomain}/api/2024-07/graphql.json`,
       {
         method: 'POST',
         headers: {
@@ -94,8 +82,12 @@ const handler = async (req, res) => {
       }
     );
 
+    // Get the response status and headers for debugging
+    console.log('Shopify API response status:', response.status);
+    
     // Get the response data
     const data = await response.json();
+    console.log('Shopify API response data:', data);
 
     // Return the data to the client
     return res.status(200).json(data);
@@ -103,7 +95,8 @@ const handler = async (req, res) => {
     console.error('Shopify API Proxy Error:', error);
     return res.status(500).json({ 
       error: 'Error connecting to Shopify API', 
-      details: error.message 
+      message: error.message,
+      stack: error.stack
     });
   }
 };

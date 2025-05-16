@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopify API Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+    button {
+      background-color: #5c6ac4;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    button:hover {
+      background-color: #4959bd;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      border: 1px solid #e1e1e1;
+      border-radius: 4px;
+      padding: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .product-card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    .product-card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    .product-card p {
+      color: #666;
+      font-size: 14px;
+      margin: 0;
+    }
+    .error {
+      color: #e74c3c;
+      padding: 10px;
+      background-color: #fadbd8;
+      border-radius: 4px;
+    }
+    .loading {
+      display: none;
+      margin: 20px 0;
+    }
+    #results {
+      margin-top: 20px;
+    }
+    pre {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Shopify API Test</h1>
+  
+  <div>
+    <button id="testButton">Test API</button>
+    <input type="text" id="apiUrl" value="https://vercelapi-five.vercel.app/api/shopify" style="width: 350px;">
+  </div>
+  
+  <div class="loading" id="loading">Loading...</div>
+  
+  <div id="results"></div>
+  
+  <script>
+    document.getElementById('testButton').addEventListener('click', async function() {
+      const resultsDiv = document.getElementById('results');
+      const loading = document.getElementById('loading');
+      const apiUrl = document.getElementById('apiUrl').value;
+      
+      resultsDiv.innerHTML = '';
+      loading.style.display = 'block';
+      
+      try {
+        // Make a POST request to the API
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}) // Empty query - the API will use the default links collection
+        });
+        
+        // Check if the request was successful
+        if (!response.ok) {
+          const errorText = await response.text();
+          resultsDiv.innerHTML = `<div class="error">API error (${response.status}): ${errorText}</div>`;
+          loading.style.display = 'none';
+          return;
+        }
+        
+        // Parse the response
+        const data = await response.json();
+        
+        // Display the raw JSON
+        resultsDiv.innerHTML = `
+          <h2>Raw Response</h2>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+        
+        // Check if we got the expected data structure
+        if (data.data && data.data.collection) {
+          const products = data.data.collection.products.edges.map(edge => edge.node);
+          
+          // Display collection info
+          resultsDiv.innerHTML += `
+            <h2>Collection: ${data.data.collection.title}</h2>
+            <p>Found ${products.length} products in this collection</p>
+          `;
+          
+          // Display products in a grid
+          if (products.length > 0) {
+            let productsHTML = '<div class="product-grid">';
+            
+            products.forEach(product => {
+              // Get the image URL if available
+              let imageUrl = 'https://via.placeholder.com/150';
+              
+              if (product.images && 
+                  product.images.edges && 
+                  product.images.edges.length > 0) {
+                imageUrl = product.images.edges[0].node.url;
+              }
+              
+              // Get the price if available
+              let price = 'No price info';
+              
+              if (product.variants && 
+                  product.variants.edges && 
+                  product.variants.edges.length > 0 &&
+                  product.variants.edges[0].node.price) {
+                const priceData = product.variants.edges[0].node.price;
+                price = `${priceData.amount} ${priceData.currencyCode}`;
+              }
+              
+              // Add the product card
+              productsHTML += `
+                <div class="product-card">
+                  <img src="${imageUrl}" alt="${product.title}">
+                  <h3>${product.title}</h3>
+                  <p>${price}</p>
+                </div>
+              `;
+            });
+            
+            productsHTML += '</div>';
+            resultsDiv.innerHTML += productsHTML;
+          }
+        } else {
+          resultsDiv.innerHTML += `<div class="error">Unexpected response structure</div>`;
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = `<div class="error">Error testing the API: ${error.message}</div>`;
+      } finally {
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -6,10 +6,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["shopify", "api", "proxy", "vercel"],
+  "keywords": [
+    "shopify",
+    "api",
+    "proxy",
+    "vercel"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.7.0"
   }
 }
