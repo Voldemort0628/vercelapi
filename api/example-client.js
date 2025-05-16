@@ -7,24 +7,9 @@ async function fetchProducts() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // No need to include Authorization header for Storefront API
       },
-      // Make sure to stringify the body properly
-      body: JSON.stringify({
-        query: `
-          {
-            products(first: 10) {
-              edges {
-                node {
-                  id
-                  title
-                  description
-                }
-              }
-            }
-          }
-        `
-      })
+      // No query needed - the API will automatically pull from the "links" collection
+      body: JSON.stringify({})
     });
     
     if (!response.ok) {
@@ -54,7 +39,11 @@ function ProductList() {
       try {
         setLoading(true);
         const result = await fetchProducts();
-        setProducts(result.data.products.edges.map(edge => edge.node));
+        
+        // Access the products from the collection
+        const productsFromCollection = result.data.collection.products.edges.map(edge => edge.node);
+        setProducts(productsFromCollection);
+        
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -70,11 +59,18 @@ function ProductList() {
 
   return (
     <div>
-      <h2>Products</h2>
+      <h2>Links Collection Products</h2>
       <ul>
         {products.map(product => (
           <li key={product.id}>
             <h3>{product.title}</h3>
+            {product.images.edges.length > 0 && (
+              <img 
+                src={product.images.edges[0].node.url} 
+                alt={product.images.edges[0].node.altText || product.title} 
+                style={{ maxWidth: '100px' }}
+              />
+            )}
             <div dangerouslySetInnerHTML={{ __html: product.description }} />
           </li>
         ))}

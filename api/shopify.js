@@ -45,6 +45,56 @@ const handler = async (req, res) => {
       }});
     }
 
+    // Modify the incoming query to filter for the links-collection
+    let requestBody = req.body;
+    
+    // If no specific collection is requested, override to get links-collection
+    if (requestBody && requestBody.query && !requestBody.query.includes('collection(handle:')) {
+      // Collection handle for "links"
+      const collectionHandle = 'links';
+      
+      // Build a query that specifically targets the links collection
+      const modifiedQuery = `
+        {
+          collection(handle: "${collectionHandle}") {
+            title
+            products(first: 50) {
+              edges {
+                node {
+                  id
+                  title
+                  description
+                  handle
+                  images(first: 1) {
+                    edges {
+                      node {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                  variants(first: 1) {
+                    edges {
+                      node {
+                        id
+                        price {
+                          amount
+                          currencyCode
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+      
+      // Replace the query with our modified version
+      requestBody = { query: modifiedQuery };
+    }
+    
     // Forward the GraphQL query to Shopify's Storefront API
     const response = await fetch(
       `https://${shopifyDomain}/api/2023-10/graphql.json`,
@@ -54,7 +104,7 @@ const handler = async (req, res) => {
           'Content-Type': 'application/json',
           'X-Shopify-Storefront-Access-Token': storefrontAccessToken,
         },
-        body: JSON.stringify(req.body),
+        body: JSON.stringify(requestBody),
       }
     );
 
