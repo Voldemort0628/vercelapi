@@ -6,7 +6,7 @@ const API_URL = 'https://vercelapi-five.vercel.app/api/shopify';
 
 // List of potential collection handles to try
 const collectionHandles = [
-  'links',          // Original name we tried
+  'links-collection',          // Original name we tried
   'link',           // Singular version
   'all',            // Common default collection
   'frontpage',      // Common default collection

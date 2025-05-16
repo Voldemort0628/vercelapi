@@ -45,19 +45,37 @@ const handler = async (req, res) => {
     let requestBody = req.body;
     
     if (!requestBody || !requestBody.query) {
-      // Default test query to list collections
+      // Default test query to get all products
       // Using proper Shopify Storefront API query format with operation name
       requestBody = {
         query: `
-          query GetCollections {
-            collections(first: 10) {
+          query GetAllProducts {
+            products(first: 100) {
               edges {
                 node {
                   id
                   title
-                  handle
-                  productsCount
                   description
+                  handle
+                  images(first: 1) {
+                    edges {
+                      node {
+                        url
+                        altText
+                      }
+                    }
+                  }
+                  variants(first: 1) {
+                    edges {
+                      node {
+                        id
+                        price {
+                          amount
+                          currencyCode
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }

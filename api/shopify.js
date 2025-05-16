@@ -65,42 +65,72 @@ const handler = async (req, res) => {
     // Modify the incoming query to filter for the links-collection
     let requestBody = req.body;
     
-    // If no specific collection is requested, override to get links-collection
-    if (requestBody && requestBody.query && !requestBody.query.includes('collection(handle:')) {
-      // Collection handle for "links"
-      const collectionHandle = 'links';
-      
-      // Build a query that specifically targets the links collection
+    // Override to get all products regardless of collection
+    if (requestBody && !requestBody.query) {
+      // Build a query that gets all products in the store
       // Using proper Shopify Storefront API query format
       const modifiedQuery = `
-        query GetCollectionProducts {
-          collection(handle: "${collectionHandle}") {
-            id
-            title
-            handle
-            products(first: 50) {
-              edges {
-                node {
-                  id
-                  title
-                  description
-                  handle
-                  images(first: 1) {
-                    edges {
-                      node {
-                        url
-                        altText
+        query GetAllProducts {
+          products(first: 100) {
+            edges {
+              node {
+                id
+                title
+                description
+                handle
+                images(first: 1) {
+                  edges {
+                    node {
+                      url
+                      altText
+                    }
+                  }
+                }
+                variants(first: 1) {
+                  edges {
+                    node {
+                      id
+                      price {
+                        amount
+                        currencyCode
                       }
                     }
                   }
-                  variants(first: 1) {
-                    edges {
-                      node {
-                        id
-                        price {
-                          amount
-                          currencyCode
-                        }
+                }
+              }
+            }
+          }
+        }
+      `;
+      
+      // Replace the query with our modified version
+      requestBody = { query: modifiedQuery };
+    } else if (requestBody && requestBody.query && typeof requestBody.query === 'string' && requestBody.query.trim() === '{}') {
+      // Special case for empty query object
+      const modifiedQuery = `
+        query GetAllProducts {
+          products(first: 100) {
+            edges {
+              node {
+                id
+                title
+                description
+                handle
+                images(first: 1) {
+                  edges {
+                    node {
+                      url
+                      altText
+                    }
+                  }
+                }
+                variants(first: 1) {
+                  edges {
+                    node {
+                      id
+                      price {
+                        amount
+                        currencyCode
                       }
                     }
                   }

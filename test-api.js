@@ -2,7 +2,7 @@
 const fetch = require('node-fetch');
 
 // Replace with your actual Vercel deployment URL
-const API_URL = 'https://vercelapi-five.vercel.app/api/debug';
+const API_URL = 'https://vercelapi-five.vercel.app/api/shopify';
 
 async function testShopifyAPI() {
   console.log('Testing Shopify API endpoint...');
@@ -15,7 +15,7 @@ async function testShopifyAPI() {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query: "{}" }) // Need to provide a query object, even if empty
+      body: JSON.stringify({ query: "query GetAllProducts { products(first: 50) { edges { node { id title description handle images(first: 1) { edges { node { url altText } } } variants(first: 1) { edges { node { id price { amount currencyCode } } } } } } } }" })
     });
     
     // Check if the request was successful
@@ -33,11 +33,10 @@ async function testShopifyAPI() {
     console.log(JSON.stringify(data, null, 2));
     
     // Check if we got the expected data structure
-    if (data.data && data.data.collection) {
-      console.log('\n=== COLLECTION INFO ===');
-      console.log(`Collection Title: ${data.data.collection.title}`);
+    if (data.data && data.data.products) {
+      console.log('\n=== PRODUCTS INFO ===');
       
-      const products = data.data.collection.products.edges.map(edge => edge.node);
+      const products = data.data.products.edges.map(edge => edge.node);
       console.log(`\nNumber of Products: ${products.length}`);
       
       if (products.length > 0) {
